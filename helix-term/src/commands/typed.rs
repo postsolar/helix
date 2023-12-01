@@ -2459,6 +2459,18 @@ fn yank_diagnostic(
     Ok(())
 }
 
+fn echo(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) -> anyhow::Result<()> {
+    if event != PromptEvent::Validate {
+        return Ok(());
+    }
+
+    let args = args.join(" ");
+
+    cx.editor.set_status(args);
+
+    Ok(())
+}
+
 pub fn process_cmd(
     cx: &mut compositor::Context,
     input: &str,
@@ -3113,6 +3125,13 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         doc: "Yank diagnostic(s) under primary cursor to register, or clipboard by default",
         fun: yank_diagnostic,
         signature: CommandSignature::all(completers::register),
+    },
+    TypableCommand {
+        name: "echo",
+        aliases: &[],
+        doc: "Print the processed input to the editor status",
+        fun: echo,
+        signature: CommandSignature::all(completers::variables)
     },
 ];
 
