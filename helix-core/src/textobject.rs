@@ -200,8 +200,8 @@ pub fn textobject_paragraph(
     Range::new(anchor, head)
 }
 
-fn line_is_empty(line: RopeSlice) -> bool {
-    line.eq("\n") || line.eq("\r\n") || line.len_chars() == 0
+fn line_is_empty(line: RopeSlice, line_ending: LineEnding) -> bool {
+    line.eq(line_ending.as_str()) || line.len_chars() == 0
 }
 
 pub fn textobject_indentation_level(
@@ -225,7 +225,7 @@ pub fn textobject_indentation_level(
         // Including empty lines leads to pathological behaviour, where having
         // an empty line in a multi-line selection causes the entire buffer to
         // be selected, which is not intuitively what we want.
-        if !line_is_empty(line) {
+        if !line_is_empty(line, line_ending) {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
             min_indent = match min_indent {
                 Some(actual_min_indent) => Some(cmp::min(indent_level, actual_min_indent)),
@@ -248,7 +248,7 @@ pub fn textobject_indentation_level(
     if line_start > 0 {
         for line in slice.lines_at(line_start).reversed() {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
-            if indent_level >= min_indent.unwrap() || line_is_empty(line) {
+            if indent_level >= min_indent.unwrap() || line_is_empty(line, line_ending) {
                 line_start -= 1;
             } else {
                 break;
@@ -261,7 +261,7 @@ pub fn textobject_indentation_level(
     if line_end < slice.len_lines() {
         for line in slice.lines_at(line_end + 1) {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
-            if indent_level >= min_indent.unwrap() || line_is_empty(line) {
+            if indent_level >= min_indent.unwrap() || line_is_empty(line, line_ending) {
                 line_end += 1;
             } else {
                 break;
