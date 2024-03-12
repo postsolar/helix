@@ -221,9 +221,10 @@ pub fn textobject_indentation_level(
         // be selected, which is not intuitively what we want.
         if !rope_is_line_ending(line) {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
-            min_indent = match min_indent {
-                Some(actual_min_indent) => Some(cmp::min(indent_level, actual_min_indent)),
-                None => Some(indent_level),
+            min_indent = if let Some(prev_min_indent) = min_indent {
+                Some(cmp::min(indent_level, prev_min_indent))
+            } else {
+                Some(indent_level)
             }
         }
     }
