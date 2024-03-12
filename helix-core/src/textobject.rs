@@ -7,11 +7,11 @@ use tree_sitter::{Node, QueryCursor};
 use crate::chars::{categorize_char, char_is_whitespace, CharCategory};
 use crate::graphemes::{next_grapheme_boundary, prev_grapheme_boundary};
 use crate::indent::{indent_level_for_line, IndentStyle};
-use crate::line_ending::rope_is_line_ending;
+use crate::line_ending::{get_line_ending, rope_is_line_ending};
 use crate::movement::Direction;
+use crate::surround;
 use crate::syntax::LanguageConfiguration;
 use crate::Range;
-use crate::{surround, LineEnding};
 
 fn find_word_boundary(slice: RopeSlice, mut pos: usize, direction: Direction, long: bool) -> usize {
     use CharCategory::{Eol, Whitespace};
@@ -200,17 +200,12 @@ pub fn textobject_paragraph(
     Range::new(anchor, head)
 }
 
-fn line_is_empty(line: RopeSlice, line_ending: LineEnding) -> bool {
-    line.eq(line_ending.as_str()) || line.len_chars() == 0
-}
-
 pub fn textobject_indentation_level(
     slice: RopeSlice,
     range: Range,
     count: usize,
     &indent_style: &IndentStyle,
     tab_width: usize,
-    line_ending: LineEnding,
 ) -> Range {
     let (mut line_start, mut line_end) = range.line_range(slice);
     let indent_width = indent_style.indent_width(tab_width);
@@ -225,7 +220,7 @@ pub fn textobject_indentation_level(
         // Including empty lines leads to pathological behaviour, where having
         // an empty line in a multi-line selection causes the entire buffer to
         // be selected, which is not intuitively what we want.
-        if !line_is_empty(line, line_ending) {
+        if !rope_is_line_ending(line) {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
             min_indent = match min_indent {
                 Some(actual_min_indent) => Some(cmp::min(indent_level, actual_min_indent)),
@@ -248,7 +243,7 @@ pub fn textobject_indentation_level(
     if line_start > 0 {
         for line in slice.lines_at(line_start).reversed() {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
-            if indent_level >= min_indent.unwrap() || line_is_empty(line, line_ending) {
+            if indent_level >= min_indent.unwrap() || rope_is_line_ending(line) {
                 line_start -= 1;
             } else {
                 break;
@@ -261,7 +256,7 @@ pub fn textobject_indentation_level(
     if line_end < slice.len_lines() {
         for line in slice.lines_at(line_end + 1) {
             let indent_level = indent_level_for_line(line, tab_width, indent_width);
-            if indent_level >= min_indent.unwrap() || line_is_empty(line, line_ending) {
+            if indent_level >= min_indent.unwrap() || rope_is_line_ending(line) {
                 line_end += 1;
             } else {
                 break;
@@ -270,11 +265,12 @@ pub fn textobject_indentation_level(
     }
 
     let new_char_start = slice.line_to_char(line_start);
-    let mut new_char_end = slice.line(line_end).chars().count() + slice.line_to_char(line_end);
+    let new_line_end_slice = slice.line(line_end);
+    let mut new_char_end = new_line_end_slice.chars().count() + slice.line_to_char(line_end);
 
     // Unless the end of the new range is to the end of the buffer, we want to
     // trim the final line ending from the selection.
-    if slice.len_lines() != line_end + 1 {
+    if let Some(line_ending) = get_line_ending(&new_line_end_slice) {
         new_char_end = new_char_end.saturating_sub(line_ending.len_chars());
     }
 
@@ -652,14 +648,7 @@ mod test {
             let (s, selection) = crate::test::print(before);
             let text = Rope::from(s.as_str());
             let selection = selection.transform(|r| {
-                textobject_indentation_level(
-                    text.slice(..),
-                    r,
-                    count,
-                    &IndentStyle::Tabs,
-                    4,
-                    LineEnding::LF,
-                )
+                textobject_indentation_level(text.slice(..), r, count, &IndentStyle::Tabs, 4)
             });
             let actual = crate::test::plain(s.as_ref(), &selection);
             assert_eq!(actual, expected, "\nbefore: `{:?}`", before);
