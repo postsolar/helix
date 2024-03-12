@@ -6,7 +6,7 @@ use tree_sitter::{Node, QueryCursor};
 
 use crate::chars::{categorize_char, char_is_whitespace, CharCategory};
 use crate::graphemes::{next_grapheme_boundary, prev_grapheme_boundary};
-use crate::indent::{indent_level_for_line, IndentStyle};
+use crate::indent::indent_level_for_line;
 use crate::line_ending::{get_line_ending, rope_is_line_ending};
 use crate::movement::Direction;
 use crate::surround;
@@ -204,11 +204,10 @@ pub fn textobject_indentation_level(
     slice: RopeSlice,
     range: Range,
     count: usize,
-    &indent_style: &IndentStyle,
+    indent_width: usize,
     tab_width: usize,
 ) -> Range {
     let (mut line_start, mut line_end) = range.line_range(slice);
-    let indent_width = indent_style.indent_width(tab_width);
     let mut min_indent: Option<usize> = None;
 
     // Find the innermost indent represented by the current selection range.
@@ -647,9 +646,8 @@ mod test {
         for (before, expected, count) in tests {
             let (s, selection) = crate::test::print(before);
             let text = Rope::from(s.as_str());
-            let selection = selection.transform(|r| {
-                textobject_indentation_level(text.slice(..), r, count, &IndentStyle::Tabs, 4)
-            });
+            let selection = selection
+                .transform(|r| textobject_indentation_level(text.slice(..), r, count, 4, 4));
             let actual = crate::test::plain(s.as_ref(), &selection);
             assert_eq!(actual, expected, "\nbefore: `{:?}`", before);
         }

@@ -5169,7 +5169,7 @@ fn select_textobject(cx: &mut Context, objtype: textobject::TextObject) {
                             text,
                             range,
                             count,
-                            &doc.indent_style,
+                            doc.indent_width(),
                             doc.tab_width(),
                         ),
                         'm' => textobject::textobject_pair_surround_closest(
