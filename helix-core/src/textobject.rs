@@ -274,10 +274,7 @@ pub fn textobject_indentation_level(
         new_char_end = new_char_end.saturating_sub(line_ending.len_chars());
     }
 
-    match range.direction() {
-        Direction::Forward => Range::new(new_char_start, new_char_end),
-        Direction::Backward => Range::new(new_char_end, new_char_start),
-    }
+    Range::new(new_char_start, new_char_end).with_direction(range.direction())
 }
 
 pub fn textobject_pair_surround(
