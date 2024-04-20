@@ -2472,46 +2472,6 @@ fn echo(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) -> 
     Ok(())
 }
 
-fn yank_diagnostic(
-    cx: &mut compositor::Context,
-    args: &[Cow<str>],
-    event: PromptEvent,
-) -> anyhow::Result<()> {
-    if event != PromptEvent::Validate {
-        return Ok(());
-    }
-
-    let reg = match args.first() {
-        Some(s) => {
-            ensure!(s.chars().count() == 1, format!("Invalid register {s}"));
-            s.chars().next().unwrap()
-        }
-        None => '+',
-    };
-
-    let (view, doc) = current_ref!(cx.editor);
-    let primary = doc.selection(view.id).primary();
-
-    // Look only for diagnostics that intersect with the primary selection
-    let diag: Vec<_> = doc
-        .diagnostics()
-        .iter()
-        .filter(|d| primary.overlaps(&helix_core::Range::new(d.range.start, d.range.end)))
-        .map(|d| d.message.clone())
-        .collect();
-    let n = diag.len();
-    if n == 0 {
-        bail!("No diagnostics under primary selection");
-    }
-
-    cx.editor.registers.write(reg, diag)?;
-    cx.editor.set_status(format!(
-        "Yanked {n} diagnostic{} to register {reg}",
-        if n == 1 { "" } else { "s" }
-    ));
-    Ok(())
-}
-
 fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) -> anyhow::Result<()> {
     if event != PromptEvent::Validate {
         return Ok(());

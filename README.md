@@ -1,3 +1,16 @@
+# PRs merged into this branch
+
+[Add `unbind_default_keys` config option #9384](https://github.com/helix-editor/helix/pull/9384)
+
+[Add command expansions `%key{body}` #6979](https://github.com/helix-editor/helix/pull/6979)
+
+~~[Globbing support in `:open` #9723](https://github.com/helix-editor/helix/pull/9723)~~
+*Too many merge conflicts + it's easy to substitute with `:open %sh{ printf '%s\n' <globs> }`*
+
+[Pickers "v2" #9647](https://github.com/helix-editor/helix/pull/9647)
+
+[Implement new textobject for indentation level #9843](https://github.com/helix-editor/helix/pull/9843)
+
 <div align="center">
 
 <h1>
