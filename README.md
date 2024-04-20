@@ -1,5 +1,6 @@
 # PRs merged into this branch
 
+
 [Add `unbind_default_keys` config option #9384](https://github.com/helix-editor/helix/pull/9384)
 
 [Add command expansions `%key{body}` #6979](https://github.com/helix-editor/helix/pull/6979)
